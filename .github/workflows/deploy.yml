@@ -1,0 +1,50 @@
+name: Deploy GRTAlgo preview
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: grtalgo-preview-deploy
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r backend/requirements.txt pytest httpx
+      - run: cd backend && python -m pytest -q
+      - run: docker compose build && docker compose up -d
+      - run: bash scripts/check-health.sh
+      - run: docker save grtalgo-frontend grtalgo-backend | gzip > images.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arm64-images
+          path: images.tar.gz
+          retention-days: 1
+      - if: always()
+        run: docker compose down
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: grtalgo-preview
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: arm64-images
+      - name: Transfer tested images
+        env:
+          SSH_KEY: ${{ secrets.GRT_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.GRT_KNOWN_HOSTS }}
+          HOST: ${{ secrets.GRT_HOST }}
+          USER: ${{ secrets.GRT_USER }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/grt
+          chmod 600 ~/.ssh/grt
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/grt "$USER@$HOST" < images.tar.gz
