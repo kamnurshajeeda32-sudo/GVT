@@ -1,5 +1,23 @@
 name: grtalgo
 services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: grtalgo_db
+      POSTGRES_USER: grtalgo_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U grtalgo_user -d grtalgo_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 512m
+  redis:
+    image: redis:7
+    command: ["redis-server","--maxmemory","64mb","--maxmemory-policy","noeviction"]
+    mem_limit: 128m
   frontend:
     build: ./frontend
     ports:
@@ -7,6 +25,21 @@ services:
     mem_limit: 768m
   backend:
     build: ./backend
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set password}
+      APP_ORIGIN: ${APP_ORIGIN:-https://grtalgo.com}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     ports:
       - '127.0.0.1:8100:8000'
-    mem_limit: 384m
+    mem_limit: 512m
+volumes:
+  postgres_data:

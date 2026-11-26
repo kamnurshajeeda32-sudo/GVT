@@ -1,1 +1,1 @@
-export default function Home() { return <main><h1>GRTAlgo</h1><p>Development preview — paper trading only. Execution is disabled.</p></main>; }
+export default function Home(){return <main style={{fontFamily:'system-ui',padding:48}}><h1>GRTAlgo</h1><p>Development preview — paper trading only. Execution is disabled.</p><a href="/account">Sign in or create an account</a></main>}
