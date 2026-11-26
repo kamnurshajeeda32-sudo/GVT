@@ -1,5 +1,5 @@
 # GRTAlgo
 
-Independent AI-assisted algorithmic trading platform. Development only; no live execution or production deployment authorized.
+Development scaffold. No live execution. See docs/DEPLOYMENT.md and docs/REA_REPORT.md.
 
-Development takes place on `develop`. The existing GNK application is out of scope. Reference application analysis remains pending authorized access.
+Local preview: docker compose up --build. Not production ready.

@@ -1,0 +1,12 @@
+name: grtalgo
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - '127.0.0.1:3100:3000'
+    mem_limit: 768m
+  backend:
+    build: ./backend
+    ports:
+      - '127.0.0.1:8100:8000'
+    mem_limit: 384m
